@@ -93,6 +93,10 @@ td.p{color:var(--pass);font-weight:700} td.f{color:var(--fail);font-weight:700}
 .exp{font-size:14px;color:var(--mute)}
 .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
 @media (prefers-reduced-motion:no-preference){.cell{transition:background .12s}}
+
+textarea.code{width:100%;min-height:200px;resize:vertical;background:var(--code-bg);color:var(--code-ink);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font:400 13px/1.6 var(--f-mono);tab-size:4;white-space:pre;overflow:auto}
+.res-ok{color:var(--pass);font-weight:700}.res-no{color:var(--fail);font-weight:700}
+.err{color:var(--fail);font-size:14px}
 </style>
 
 </head>
@@ -198,6 +202,26 @@ td.p{color:var(--pass);font-weight:700} td.f{color:var(--fail);font-weight:700}
           <tr><td>size_25_2</td><td>십자가</td><td>52.9</td><td>0.1</td><td>Cross</td><td>+</td><td class="p">PASS</td></tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <section id="practice">
+    <h2>로직 직접 써보기</h2>
+    <p class="lead">핵심 함수를 직접 작성하고 테스트를 실행해 보세요. 브라우저 안에서 실제 Python이 실행됩니다. 처음 실행할 때만 Python 런타임(약 10MB)을 내려받아 몇 초 걸립니다.</p>
+    <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+      <div class="tabs" id="extabs" role="tablist"></div>
+      <p id="exdesc"></p>
+      <textarea class="code" id="exedit" spellcheck="false" rows="10" aria-label="Python 코드 입력"></textarea>
+      <div class="row">
+        <button class="btn" id="exrun" type="button">실행</button>
+        <button class="btn" id="exreset" type="button">처음 코드로</button>
+        <button class="btn" id="exsol" type="button" aria-pressed="false">정답 보기</button>
+        <span class="cap" id="exstat" role="status"></span>
+      </div>
+      <pre id="exsolpre" hidden></pre>
+      <p class="err" id="exerr" hidden></p>
+      <div class="scroll"><table id="extable" hidden><thead><tr><th>테스트</th><th>기대값</th><th>결과값</th><th></th></tr></thead><tbody></tbody></table></div>
+      <p class="cap">무한 루프를 작성하면 탭이 멈출 수 있습니다. 그럴 때는 페이지를 새로 고치세요.</p>
     </div>
   </section>
 
@@ -359,6 +383,75 @@ td.p{color:var(--pass);font-weight:700} td.f{color:var(--fail);font-weight:700}
     });
     qb.appendChild(d);
   });
+})();
+</script>
+<script>
+(function(){
+  var EX=[{"id": "mac", "fn": "mac", "title": "mac", "desc": "패턴과 필터의 같은 위치 값을 곱해 전부 더한 값을 반환하세요. 이중 for문으로 작성합니다.", "starter": "def mac(pattern, filt):\n    total = 0.0\n    # TODO: 이중 for문으로 pattern[i][j] * filt[i][j]를 누적하세요\n    return total\n", "solution": "def mac(pattern, filt):\n    total = 0.0\n    for i in range(len(pattern)):\n        for j in range(len(pattern[i])):\n            total += pattern[i][j] * filt[i][j]\n    return total\n", "tests": [{"label": "3x3 십자가 입력 · 십자가 필터", "args": [[[0, 1, 0], [1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 1], [0, 1, 0]]], "expect": 5}, {"label": "3x3 십자가 입력 · X 필터", "args": [[[0, 1, 0], [1, 1, 1], [0, 1, 0]], [[1, 0, 1], [0, 1, 0], [1, 0, 1]]], "expect": 1}, {"label": "3x3 X 입력 · X 필터", "args": [[[1, 0, 1], [0, 1, 0], [1, 0, 1]], [[1, 0, 1], [0, 1, 0], [1, 0, 1]]], "expect": 5}, {"label": "data.json size_5 X 입력 · Cross 필터", "args": [[[1, 0, 0, 0, 1], [0, 1, 0, 1, 0], [0, 0, 1, 0, 0], [0, 1, 0, 1, 0], [1, 0, 0, 0, 1]], [[0, 0, 1, 0, 0], [0, 0, 1, 0, 0], [1, 1, 0.9, 1, 1], [0, 0, 1, 0, 0], [0, 0, 1, 0, 0]]], "expect": 0.9}]}, {"id": "judge", "fn": "judge_scores", "title": "judge_scores", "desc": "두 점수의 차이가 1e-9보다 작으면 \"UNDECIDED\", 아니면 점수가 큰 쪽 이름(name_a 또는 name_b)을 반환하세요. 동점 검사를 먼저 합니다.", "starter": "EPSILON = 1e-9\n\ndef judge_scores(score_a, score_b, name_a=\"A\", name_b=\"B\"):\n    # TODO: 동점이면 \"UNDECIDED\"\n    # TODO: 아니면 큰 쪽의 이름\n    pass\n", "solution": "EPSILON = 1e-9\n\ndef judge_scores(score_a, score_b, name_a=\"A\", name_b=\"B\"):\n    if abs(score_a - score_b) < EPSILON:\n        return \"UNDECIDED\"\n    return name_a if score_a > score_b else name_b\n", "tests": [{"label": "5 vs 1 → A", "args": [5, 1], "expect": "A"}, {"label": "1 vs 5 → B", "args": [1, 5], "expect": "B"}, {"label": "0.9 vs 0.9 → UNDECIDED", "args": [0.9, 0.9], "expect": "UNDECIDED"}, {"label": "0.1+0.2 vs 0.3 (부동소수점 오차) → UNDECIDED", "args": [0.30000000000000004, 0.3], "expect": "UNDECIDED"}, {"label": "이름 지정: Cross/X", "args": [8.9, 0.1, "Cross", "X"], "expect": "Cross"}]}, {"id": "norm", "fn": "normalize_label", "title": "normalize_label", "desc": "\"+\"와 \"cross\"는 \"Cross\", \"x\"는 \"X\"로 바꾸세요. 공백과 대소문자는 무시하고, 알 수 없는 라벨은 ValueError를 발생시킵니다.", "starter": "def normalize_label(label):\n    key = str(label).strip().lower()\n    # TODO: \"+\"/\"cross\" -> \"Cross\", \"x\" -> \"X\"\n    # TODO: 그 외에는 ValueError를 발생시키기\n    pass\n", "solution": "def normalize_label(label):\n    key = str(label).strip().lower()\n    if key in (\"+\", \"cross\"):\n        return \"Cross\"\n    if key == \"x\":\n        return \"X\"\n    raise ValueError(\"알 수 없는 라벨: %r\" % (label,))\n", "tests": [{"label": "\"+\" → Cross", "args": ["+"], "expect": "Cross"}, {"label": "\"cross\" → Cross", "args": ["cross"], "expect": "Cross"}, {"label": "\" X \" → X (공백·대소문자)", "args": [" X "], "expect": "X"}, {"label": "\"?\" → ValueError", "args": ["?"], "raises": true}]}];
+  var HARNESS="\nimport json, traceback\ndef _run(code, fname, tests):\n    ns = {}\n    try:\n        exec(code, ns)\n    except Exception:\n        return json.dumps({\"error\": traceback.format_exc().strip().splitlines()[-1]})\n    f = ns.get(fname)\n    if not callable(f):\n        return json.dumps({\"error\": \"함수 %s 를 정의해야 합니다\" % fname})\n    out = []\n    for t in tests:\n        row = {\"label\": t[\"label\"]}\n        try:\n            if t.get(\"raises\"):\n                try:\n                    f(*t[\"args\"])\n                    row.update(ok=False, got=\"예외가 발생하지 않음\")\n                except ValueError:\n                    row.update(ok=True, got=\"ValueError\")\n            else:\n                r = f(*t[\"args\"])\n                e = t[\"expect\"]\n                if isinstance(e, (int, float)) and isinstance(r, (int, float)):\n                    ok = abs(r - e) < 1e-9\n                else:\n                    ok = (r == e)\n                row.update(ok=ok, got=repr(r))\n        except Exception as ex:\n            row.update(ok=False, got=type(ex).__name__ + \": \" + str(ex))\n        row[\"expect\"] = \"ValueError\" if t.get(\"raises\") else repr(t[\"expect\"])\n        out.append(row)\n    return json.dumps(out)\n";
+  var $=function(id){return document.getElementById(id)};
+  var cur=0,py=null,loading=null,codes={};
+  var tabs=$('extabs');
+  EX.forEach(function(e,i){
+    codes[e.id]=e.starter;
+    var b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');b.textContent=e.title;
+    b.addEventListener('click',function(){save();pick(i)});tabs.appendChild(b);
+  });
+  function save(){codes[EX[cur].id]=$('exedit').value}
+  function pick(i){
+    cur=i;var e=EX[i];
+    [].forEach.call(tabs.children,function(b,k){b.setAttribute('aria-selected',k===i?'true':'false')});
+    $('exdesc').textContent=e.desc;$('exedit').value=codes[e.id];
+    $('exsolpre').hidden=true;$('exsol').setAttribute('aria-pressed','false');
+    $('extable').hidden=true;$('exerr').hidden=true;$('exstat').textContent='';
+  }
+  $('exedit').addEventListener('keydown',function(ev){
+    if(ev.key==='Tab'){ev.preventDefault();var t=ev.target,s=t.selectionStart;
+      t.value=t.value.slice(0,s)+'    '+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=s+4}
+  });
+  $('exreset').addEventListener('click',function(){codes[EX[cur].id]=EX[cur].starter;$('exedit').value=EX[cur].starter});
+  $('exsol').addEventListener('click',function(){
+    var on=$('exsol').getAttribute('aria-pressed')!=='true';
+    $('exsol').setAttribute('aria-pressed',String(on));
+    $('exsolpre').hidden=!on;$('exsolpre').textContent=EX[cur].solution;
+  });
+  function load(){
+    if(py)return Promise.resolve(py);
+    if(loading)return loading;
+    loading=new Promise(function(res,rej){
+      var s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';
+      s.onload=function(){loadPyodide().then(function(p){p.runPython(HARNESS);py=p;res(p)},rej)};
+      s.onerror=function(){rej(new Error('Python 런타임을 불러오지 못했습니다. 네트워크 연결을 확인하세요.'))};
+      document.head.appendChild(s);
+    });
+    loading.catch(function(){loading=null});
+    return loading;
+  }
+  $('exrun').addEventListener('click',function(){
+    save();var e=EX[cur],btn=$('exrun');
+    btn.disabled=true;$('exstat').textContent=py?'실행 중...':'Python 런타임 불러오는 중...';$('exerr').hidden=true;
+    load().then(function(p){
+      var r=JSON.parse(p.globals.get('_run')(codes[e.id],e.fn,p.toPy(e.tests)));
+      return r;
+    }).then(function(r){
+      var tb=$('extable'),body=tb.querySelector('tbody');body.innerHTML='';
+      if(!Array.isArray(r)){$('exerr').hidden=false;$('exerr').textContent='오류: '+r.error;tb.hidden=true;$('exstat').textContent='';return}
+      var pass=0;
+      r.forEach(function(x){
+        if(x.ok)pass++;
+        var tr=document.createElement('tr');
+        [x.label,x.expect,x.got].forEach(function(t){var td=document.createElement('td');td.textContent=t;tr.appendChild(td)});
+        var td=document.createElement('td');td.className=x.ok?'res-ok':'res-no';td.textContent=x.ok?'PASS':'FAIL';tr.appendChild(td);
+        body.appendChild(tr);
+      });
+      tb.hidden=false;
+      $('exstat').textContent=pass+' / '+r.length+' 통과'+(pass===r.length?'. 모두 통과했습니다.':'');
+    }).catch(function(err){
+      $('exerr').hidden=false;$('exerr').textContent=String(err&&err.message||err);$('exstat').textContent='';
+    }).then(function(){btn.disabled=false});
+  });
+  pick(0);
 })();
 </script>
 </body>
