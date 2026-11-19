@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini NPU 학습장</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: 좌측 고정 목차 없이 위에서 아래로 읽는 1단 학습 페이지. 실습(MAC 실험실)을 맨 위에 둔다. */
+:root{
+  --bg:#f3f6f8; --panel:#ffffff; --ink:#14212b; --mute:#566673; --line:#d5dee5;
+  --accent:#0b6e6e; --accent-ink:#ffffff; --hit:#0b6e6e; --hit-soft:#cfe9e6;
+  --pass:#1a7f4b; --fail:#b3361f; --warn:#8a5a00; --code-bg:#0f1b24; --code-ink:#d7e6ef;
+  --cell-off:#e6edf1; --cell-on:#14212b;
+  --f-head:"Space Grotesk","Noto Sans KR",system-ui,sans-serif;
+  --f-body:"Noto Sans KR",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d151b; --panel:#14202a; --ink:#e3edf3; --mute:#92a6b4; --line:#26384a;
+  --accent:#4fc3b8; --accent-ink:#06221f; --hit:#4fc3b8; --hit-soft:#1b4a48;
+  --pass:#5fd392; --fail:#ff8d78; --warn:#f0c46a; --code-bg:#091218; --code-ink:#d7e6ef;
+  --cell-off:#1e2f3b; --cell-on:#e3edf3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d151b; --panel:#14202a; --ink:#e3edf3; --mute:#92a6b4; --line:#26384a;
+  --accent:#4fc3b8; --accent-ink:#06221f; --hit:#4fc3b8; --hit-soft:#1b4a48;
+  --pass:#5fd392; --fail:#ff8d78; --warn:#f0c46a; --code-bg:#091218; --code-ink:#d7e6ef;
+  --cell-off:#1e2f3b; --cell-on:#e3edf3; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.7 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(28px,5vw,42px);font-weight:700}
+h2{font-size:22px;font-weight:700}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.lead{color:var(--mute);max-width:65ch;margin-top:8px}
+.eyebrow{font:600 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+section{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+:not(pre)>code{background:var(--cell-off);padding:1px 6px;border-radius:4px}
+pre{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:14px 16px;overflow-x:auto;font:400 13px/1.6 var(--f-mono)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px}
+.btn:hover{border-color:var(--accent)}
+.btn[aria-pressed="true"],.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+label.f{display:flex;gap:6px;align-items:center;color:var(--mute);font-size:13px}
+
+/* 실험실 */
+.lab{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;align-items:start}
+.gridbox{display:flex;flex-direction:column;gap:8px;min-width:0}
+.grid{display:grid;gap:2px;width:100%;max-width:300px;aspect-ratio:1}
+.cell{border-radius:2px;background:var(--cell-off);border:0;padding:0;min-width:0;display:flex;align-items:center;justify-content:center;font:600 9px/1 var(--f-mono);color:var(--mute)}
+.cell.on{background:var(--cell-on)}
+.cell.w{background:var(--hit-soft)}
+.cell.hit{background:var(--hit);color:var(--accent-ink)}
+.score{font:700 28px/1 var(--f-head);font-variant-numeric:tabular-nums}
+.cap{font-size:13px;color:var(--mute)}
+.verdict{display:flex;flex-wrap:wrap;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:16px}
+.pill{font:700 14px/1 var(--f-mono);padding:8px 12px;border-radius:999px;border:1px solid currentColor}
+.pill.ok{color:var(--pass)} .pill.tie{color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--mute)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+/* 해부 탭 */
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:5px 10px;font:500 13px var(--f-mono)}
+.tab:hover{border-color:var(--accent)}
+.stepbody{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.stepbody>*{min-width:0}
+.why{display:flex;flex-direction:column;gap:10px}
+.why ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+/* 표 */
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:600 12px var(--f-mono);color:var(--mute);letter-spacing:.04em}
+td.p{color:var(--pass);font-weight:700} td.f{color:var(--fail);font-weight:700}
+
+/* 퀴즈 */
+.q{display:flex;flex-direction:column;gap:10px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--pass);background:var(--hit-soft)}
+.opt.wrong{border-color:var(--fail)}
+.exp{font-size:14px;color:var(--mute)}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.cell{transition:background .12s}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="top">
+      <div class="eyebrow">MAC · 필터 · 패턴 판별</div>
+      <button class="btn" id="themeBtn" type="button">테마 전환</button>
+    </div>
+    <h1>Mini NPU 학습장</h1>
+    <p class="lead">같은 위치끼리 곱해서 전부 더하면 두 모양이 얼마나 닮았는지 숫자 하나가 나옵니다. 아래 실험실에서 칸을 눌러 직접 확인하고, 이어서 <code>main.py</code>가 그 과정을 어떤 함수로 나눠 구현했는지 따라가 보세요.</p>
+  </header>
+
+  <section id="lab">
+    <h2>MAC 실험실</h2>
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px">
+      <div class="row">
+        <label class="f">필터
+          <select id="fmode">
+            <option value="simple">단순 필터 (0/1)</option>
+            <option value="data">data.json 5×5 필터 (가중치)</option>
+          </select>
+        </label>
+        <label class="f">크기
+          <select id="size"><option>3</option><option selected>5</option><option>7</option><option>9</option><option>13</option></select>
+        </label>
+        <label class="f">동점 기준 ε
+          <select id="eps"><option value="1e-9">1e-9 (코드와 동일)</option><option value="1">1 (실습용: 크게)</option></select>
+        </label>
+      </div>
+      <div class="row">
+        <span class="cap">패턴 불러오기</span>
+        <button class="btn" data-preset="cross" type="button">십자가</button>
+        <button class="btn" data-preset="x" type="button">X</button>
+        <button class="btn" data-preset="noise" type="button">흔들린 X</button>
+        <button class="btn" data-preset="clear" type="button">모두 지우기</button>
+      </div>
+      <div class="lab">
+        <div class="gridbox">
+          <h3>입력 패턴 <span class="cap">(칸을 눌러 켜고 끄기)</span></h3>
+          <div class="grid" id="gp"></div>
+        </div>
+        <div class="gridbox">
+          <h3>Cross 필터와 겹침</h3>
+          <div class="grid" id="gc"></div>
+          <div class="score" id="sc">0</div>
+        </div>
+        <div class="gridbox">
+          <h3>X 필터와 겹침</h3>
+          <div class="grid" id="gx"></div>
+          <div class="score" id="sx">0</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--hit)"></i>패턴과 필터가 겹친 칸 (곱이 점수에 더해짐)</span>
+        <span><i style="background:var(--hit-soft)"></i>필터만 값이 있는 칸</span>
+        <span><i style="background:var(--cell-on)"></i>패턴만 켜진 칸</span>
+      </div>
+      <div class="verdict">
+        <span class="pill" id="pill">-</span>
+        <span id="vtext" class="cap"></span>
+      </div>
+      <p class="cap" id="hint"></p>
+    </div>
+  </section>
+
+  <section id="walk">
+    <h2>코드 단계별 해부</h2>
+    <p class="lead">함수를 눌러 코드와 설계 이유를 확인하세요. 위에서 아래로 "작은 부품 → 검증 → 모드 → 진입점" 순서로 쌓은 구조입니다.</p>
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="stepbody">
+        <pre id="code" tabindex="0"></pre>
+        <div class="why" id="why"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <h2>전체 호출 구조</h2>
+    <div class="panel scroll"><pre>main()
+ ├─ 모드 1: mode_user_input()  ← read_matrix → mac → judge_scores → measure_mac
+ └─ 모드 2: mode_json()
+      ├─ load_filters()        ← normalize_label, validate_matrix
+      ├─ evaluate_case() × N   ← normalize_label, validate_matrix, mac, judge_scores
+      ├─ performance_table()   ← measure_mac, make_cross
+      └─ 결과 리포트 출력</pre></div>
+  </section>
+
+  <section id="result">
+    <h2>제공된 data.json 실행 결과</h2>
+    <p class="lead">6건 중 3건 통과, 3건 실패입니다. 실패는 모두 두 점수가 정확히 같아 UNDECIDED가 된 경우이고, 규칙상 UNDECIDED는 expected와 비교하면 항상 FAIL입니다. 위 실험실에서 "data.json 5×5 필터"를 고르고 X 패턴을 불러오면 <code>size_5_1</code>의 0.9 대 0.9를 직접 재현할 수 있습니다.</p>
+    <div class="panel scroll">
+      <table>
+        <thead><tr><th>케이스</th><th>입력</th><th>Cross</th><th>X</th><th>판정</th><th>expected</th><th>결과</th></tr></thead>
+        <tbody>
+          <tr><td>size_5_1</td><td>X</td><td>0.9</td><td>0.9</td><td>UNDECIDED</td><td>x</td><td class="f">FAIL</td></tr>
+          <tr><td>size_5_2</td><td>십자가</td><td>8.9</td><td>0.1</td><td>Cross</td><td>+</td><td class="p">PASS</td></tr>
+          <tr><td>size_13_1</td><td>X</td><td>0.3</td><td>14.7</td><td>X</td><td>x</td><td class="p">PASS</td></tr>
+          <tr><td>size_13_2</td><td>십자가</td><td>7.5</td><td>7.5</td><td>UNDECIDED</td><td>+</td><td class="f">FAIL</td></tr>
+          <tr><td>size_25_1</td><td>X</td><td>4.9</td><td>4.9</td><td>UNDECIDED</td><td>x</td><td class="f">FAIL</td></tr>
+          <tr><td>size_25_2</td><td>십자가</td><td>52.9</td><td>0.1</td><td>Cross</td><td>+</td><td class="p">PASS</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="perf">
+    <h2>시간 복잡도: O(N²)</h2>
+    <p class="lead">MAC은 N×N 이중 루프에서 곱셈과 덧셈을 각각 N²번 합니다. 아래 막대는 연산 횟수이고, 측정 시간(10회 평균)은 작은 크기에서 고정 오버헤드 때문에 이론 비율보다 덜 늘어납니다.</p>
+    <div class="panel" id="perfbox" style="display:flex;flex-direction:column;gap:10px"></div>
+    <p class="cap">측정값은 작성 환경 기준이며 실행 환경에 따라 달라집니다.</p>
+  </section>
+
+  <section id="quiz">
+    <h2>이해 확인</h2>
+    <div class="panel" style="display:flex;flex-direction:column;gap:24px" id="quizbox"></div>
+  </section>
+  <footer class="cap">코드와 문서: <a href="https://github.com/jihyeongh21-svg/mini-npu-simulator">mini-npu-simulator</a> 저장소</footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- 테마 ---------- */
+  var root=document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    var dark=root.getAttribute('data-theme')==='dark'||(!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme',dark?'light':'dark');
+  });
+
+  /* ---------- MAC 실험실 ---------- */
+  function makeCross(n){var c=n>>1,m=[];for(var i=0;i<n;i++){m.push([]);for(var j=0;j<n;j++)m[i].push(i===c||j===c?1:0)}return m}
+  function makeX(n){var m=[];for(var i=0;i<n;i++){m.push([]);for(var j=0;j<n;j++)m[i].push(i===j||i+j===n-1?1:0)}return m}
+  // 제공된 data.json size_5 필터 (가중치 포함)
+  var DATA_CROSS=[[0,0,1,0,0],[0,0,1,0,0],[1,1,0.9,1,1],[0,0,1,0,0],[0,0,1,0,0]];
+  var DATA_X=[[.1,0,0,0,.1],[0,.1,0,.1,0],[0,0,.1,0,0],[0,.1,0,.1,0],[.1,0,0,0,.1]];
+  function mac(p,f){var t=0;for(var i=0;i<p.length;i++)for(var j=0;j<p[i].length;j++)t+=p[i][j]*f[i][j];return t}
+  function fmt(v){return String(+v.toFixed(6))}
+
+  var $=function(id){return document.getElementById(id)};
+  var N=5, pattern=makeX(5), fCross=makeCross(5), fX=makeX(5);
+
+  function filters(){
+    if($('fmode').value==='data'){N=5;$('size').value='5';fCross=DATA_CROSS;fX=DATA_X}
+    else{N=+$('size').value;fCross=makeCross(N);fX=makeX(N)}
+  }
+  function build(el,n){el.style.gridTemplateColumns='repeat('+n+',1fr)';el.innerHTML=''}
+  function render(){
+    var n=N,gp=$('gp'),gc=$('gc'),gx=$('gx');
+    build(gp,n);build(gc,n);build(gx,n);
+    for(var i=0;i<n;i++)for(var j=0;j<n;j++){
+      var b=document.createElement('button');b.type='button';b.className='cell'+(pattern[i][j]?' on':'');
+      b.setAttribute('aria-label','행 '+(i+1)+' 열 '+(j+1)+(pattern[i][j]?' 켜짐':' 꺼짐'));
+      b.dataset.i=i;b.dataset.j=j;gp.appendChild(b);
+      gc.appendChild(overlay(pattern[i][j],fCross[i][j]));
+      gx.appendChild(overlay(pattern[i][j],fX[i][j]));
+    }
+    var sc=mac(pattern,fCross),sx=mac(pattern,fX),eps=+$('eps').value;
+    $('sc').textContent=fmt(sc);$('sx').textContent=fmt(sx);
+    var tie=Math.abs(sc-sx)<eps,p=$('pill');
+    p.className='pill '+(tie?'tie':'ok');
+    p.textContent=tie?'UNDECIDED':(sc>sx?'Cross':'X');
+    $('vtext').textContent=tie
+      ?'|Cross − X| = '+fmt(Math.abs(sc-sx))+' < ε → 동점. 모드 2에서는 expected와 비교하면 항상 FAIL입니다.'
+      :'점수가 더 큰 쪽이 판정입니다. (차이 '+fmt(Math.abs(sc-sx))+')';
+    $('hint').textContent=$('fmode').value==='data'
+      ?'이 필터는 제공된 data.json의 size_5 값입니다. X 패턴을 불러오면 Cross 필터는 중앙 칸 0.9만 겹치고, X 필터는 대각선 9칸이 0.1씩 겹쳐 둘 다 0.9가 됩니다.'
+      :'단순 필터에서는 겹친 칸 수가 곧 점수입니다. 크기 3×3 십자가 입력에 십자가 필터는 5, X 필터는 1입니다.';
+  }
+  function overlay(pv,fv){
+    var d=document.createElement('div');d.className='cell';
+    if(pv&&fv){d.classList.add('hit')}else if(fv){d.classList.add('w')}else if(pv){d.classList.add('on')}
+    if(fv&&fv!==1)d.textContent=fmt(fv);
+    return d;
+  }
+  $('gp').addEventListener('click',function(e){
+    var t=e.target.closest('.cell');if(!t)return;
+    var i=+t.dataset.i,j=+t.dataset.j;pattern[i][j]=pattern[i][j]?0:1;render();
+  });
+  function zeros(n){var m=[];for(var i=0;i<n;i++)m.push(new Array(n).fill(0));return m}
+  document.querySelectorAll('[data-preset]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var k=b.dataset.preset;
+      if(k==='cross')pattern=makeCross(N);
+      else if(k==='x')pattern=makeX(N);
+      else if(k==='clear')pattern=zeros(N);
+      else{pattern=makeX(N);var c=N>>1;pattern[c][c]=0;pattern[0][N-1]=0;pattern[0][1]=1}
+      render();
+    });
+  });
+  ['fmode','size','eps'].forEach(function(id){
+    $(id).addEventListener('change',function(){filters();pattern=makeX(N);render()});
+  });
+  filters();render();
+
+  /* ---------- 코드 해부 ---------- */
+  var steps=[
+    {n:'상수',code:'EPSILON = 1e-9\nDATA_FILE = os.path.join(\n    os.path.dirname(os.path.abspath(__file__)),\n    "data.json")',
+     why:['표준 라이브러리만 사용: <code>json, os, re, time</code>.','<code>EPSILON</code>: 0.1, 0.9 같은 값은 2진 부동소수점으로 정확히 표현되지 않아 <code>==</code> 비교가 불안정합니다. 차이가 1e-9보다 작으면 같다고 봅니다.','<code>DATA_FILE</code>은 실행 위치가 아니라 <code>main.py</code>가 있는 폴더 기준이라 어디서 실행해도 찾습니다.']},
+    {n:'normalize_label',code:'def normalize_label(label):\n    key = str(label).strip().lower()\n    if key in ("+", "cross"):\n        return "Cross"\n    if key == "x":\n        return "X"\n    raise ValueError("알 수 없는 라벨: %r" % (label,))',
+     why:['expected는 <code>+</code>/<code>x</code>, 필터 키는 <code>cross</code>/<code>x</code>로 표기가 달라 내부에서는 <code>Cross</code>/<code>X</code>로 통일합니다.','<code>strip().lower()</code>로 공백과 대소문자 차이를 흡수합니다.','알 수 없는 라벨은 오류로 올립니다. 오타가 거짓 PASS가 되는 것을 막기 위해서입니다.']},
+    {n:'mac',code:'def mac(pattern, filt):\n    total = 0.0\n    for i in range(len(pattern)):\n        for j in range(len(pattern[i])):\n            total += pattern[i][j] * filt[i][j]\n    return total',
+     why:['같은 위치끼리 곱하고 전부 더합니다 (Multiply-Accumulate).','이중 for문은 미션이 NumPy·벡터화를 금지했기 때문입니다.','곱셈과 덧셈이 각각 N²번이므로 O(N²)입니다. 위 실험실의 겹침 칸이 곧 이 합입니다.']},
+    {n:'judge_scores',code:'def judge_scores(score_a, score_b,\n                 name_a="A", name_b="B"):\n    if abs(score_a - score_b) < EPSILON:\n        return "UNDECIDED"\n    return name_a if score_a > score_b else name_b',
+     why:['동점 검사를 먼저 합니다. 순서가 반대면 동점이 항상 B로 판정되는 버그가 생깁니다.','<code>name_a</code>, <code>name_b</code> 인자로 모드 1(A/B)과 모드 2(Cross/X)가 같은 함수를 씁니다.']},
+    {n:'measure_mac',code:'def measure_mac(pattern, filt, repeat=10):\n    start = time.perf_counter()\n    for _ in range(repeat):\n        mac(pattern, filt)\n    return (time.perf_counter() - start) / repeat * 1000.0',
+     why:['<code>perf_counter</code>는 짧은 구간용 고해상도 타이머입니다.','측정 구간에 <code>mac</code>만 넣어 print/input 시간이 섞이지 않습니다.','마이크로초 단위라 10회 평균을 냅니다. 마지막 <code>* 1000</code>으로 초를 ms로 바꿉니다.']},
+    {n:'validate_matrix',code:'def validate_matrix(m, size=None):\n    if not isinstance(m, list) or not m:\n        raise ValueError("2차원 배열이 아님")\n    n = len(m)\n    for row in m:\n        if not isinstance(row, list) or len(row) != n:\n            raise ValueError("정사각 행렬이 아님")\n        for v in row:\n            if isinstance(v, bool) or \\\n               not isinstance(v, (int, float)):\n                raise ValueError("숫자가 아닌 값")\n    if size is not None and n != size:\n        raise ValueError("크기 불일치")\n    return n',
+     why:['<code>mac</code> 앞의 방어선입니다. 크기가 맞지 않는 입력이 <code>IndexError</code>로 프로그램을 죽이지 않게 합니다.','<code>bool</code>은 <code>int</code>의 하위 타입이라 따로 걸러냅니다.','사유 문자열이 그대로 콘솔의 FAIL 사유가 됩니다.']},
+    {n:'load_filters',code:'def load_filters(data):\n    result = {}\n    raw = data.get("filters")\n    for key, val in raw.items():\n        m = re.fullmatch(r"size_(\\d+)", key)\n        if not m:\n            raise ValueError("필터 키 형식 오류")\n        size = int(m.group(1))\n        fs = {}\n        for lbl, mat in val.items():\n            fs[normalize_label(lbl)] = mat\n        if "Cross" not in fs or "X" not in fs:\n            raise ValueError("Cross/X 필터 필요")\n        for mat in fs.values():\n            validate_matrix(mat, size)\n        result[size] = fs\n    return result',
+     why:['<code>{"size_5": {"cross": M, "x": M}}</code>를 <code>{5: {"Cross": M, "X": M}}</code>로 바꿉니다.','키는 정규식으로 검사하고 숫자 N을 뽑습니다.','필터의 실제 크기가 키의 N과 같은지까지 확인합니다.']},
+    {n:'evaluate_case',code:'def evaluate_case(name, case, filters):\n    info = {"name": name, "pass": False, ...}\n    try:\n        size = int(re.fullmatch(r"size_(\\d+)_.+", name).group(1))\n        expected = normalize_label(case["expected"])\n        validate_matrix(case["input"], size)\n        sc = mac(pattern, filters[size]["Cross"])\n        sx = mac(pattern, filters[size]["X"])\n        judged = judge_scores(sc, sx, "Cross", "X")\n        if judged == "UNDECIDED": ...  # 항상 FAIL\n        elif judged == expected: info["pass"] = True\n    except (ValueError, TypeError, KeyError) as e:\n        info["reason"] = str(e)\n    return info',
+     why:['함수 전체가 try/except로 감싸져 어떤 오류든 해당 케이스의 FAIL 사유가 됩니다. 이것이 "비정상 종료 금지"의 구현입니다.','순서: 키 검사 → expected 정규화 → 패턴 검증 → 필터 존재 확인 → 점수 → 판정 → 비교.','UNDECIDED는 expected와 무관하게 FAIL이고 사유에 동점 규칙을 적습니다.']},
+    {n:'모드 1',code:'def read_matrix(prompt, n=3):\n    print(prompt)\n    while True:\n        rows = []\n        try:\n            for _ in range(n):\n                line = input().split()\n                if len(line) != n:\n                    raise ValueError(...)\n                rows.append([float(x) for x in line])\n            return rows\n        except ValueError as e:\n            print("입력 오류: %s. 처음부터 다시 입력하세요." % e)',
+     why:['열 수 불일치와 숫자 변환 실패 모두 <code>ValueError</code>로 모아 한 곳에서 처리합니다.','오류가 나면 안내 후 그 행렬을 처음부터 다시 받습니다. 프로그램은 종료되지 않습니다.','시간 측정은 입력이 끝난 뒤 <code>mac</code>만 대상으로 합니다.']},
+    {n:'모드 2',code:'def mode_json(path=DATA_FILE):\n    try:\n        data = json.load(open(path, encoding="utf-8"))\n        filters = load_filters(data)\n    except (OSError, ValueError) as e:\n        print("data.json 로드 실패: %s" % e)\n        return\n    for name, case in data["patterns"].items():\n        r = evaluate_case(name, case, filters)\n        ...\n    performance_table(filters)\n    # 총 / 통과 / 실패 + 실패 목록 출력',
+     why:['파일이 없거나 JSON이 깨져도 메시지만 출력하고 정상 복귀합니다.','케이스별 PASS/FAIL, 성능 표, 결과 리포트 순서로 출력합니다.']},
+    {n:'패턴 생성기',code:'def make_cross(n):\n    c = n // 2\n    return [[1 if (i == c or j == c) else 0\n             for j in range(n)] for i in range(n)]\n\ndef make_x(n):\n    return [[1 if (i == j or i + j == n - 1) else 0\n             for j in range(n)] for i in range(n)]',
+     why:['보너스 기능입니다. 3, 5, 13, 25는 모두 홀수라 가운데 행·열이 하나로 정해집니다.','짝수 N이면 <code>n // 2</code>가 한쪽으로 치우쳐 십자가가 대칭이 아닙니다.','위 실험실의 단순 필터도 같은 규칙으로 만듭니다.']}
+  ];
+  var tabs=$('tabs');
+  steps.forEach(function(s,idx){
+    var b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');b.textContent=s.n;
+    b.addEventListener('click',function(){show(idx)});tabs.appendChild(b);
+  });
+  function show(idx){
+    var s=steps[idx];
+    [].forEach.call(tabs.children,function(b,k){b.setAttribute('aria-selected',k===idx?'true':'false')});
+    $('code').textContent=s.code;
+    $('why').innerHTML='<h3>왜 이렇게 했나</h3><ul>'+s.why.map(function(w){return'<li>'+w+'</li>'}).join('')+'</ul>';
+  }
+  show(2);
+
+  /* ---------- 성능 ---------- */
+  var perf=[[3,0.0004],[5,0.0008],[13,0.0039],[25,0.0157]];
+  $('perfbox').innerHTML=perf.map(function(r){
+    var ops=r[0]*r[0],w=ops/625*100;
+    return '<div><div class="row" style="justify-content:space-between"><span class="mono">'+r[0]+'×'+r[0]+'</span><span class="cap mono">연산 '+ops+'회 · '+r[1]+' ms</span></div>'
+      +'<div style="height:10px;border-radius:5px;background:var(--cell-off)"><div style="height:100%;width:'+w+'%;border-radius:5px;background:var(--accent)"></div></div></div>';
+  }).join('');
+
+  /* ---------- 퀴즈 ---------- */
+  var quiz=[
+    {q:'3×3 십자가 입력에 십자가 필터를 적용한 MAC 점수는?',o:['1','3','5','9'],a:2,e:'겹치는 칸이 가운데 행 3칸과 가운데 열 3칸에서 중복 1칸을 뺀 5개이므로 5점입니다.'},
+    {q:'judge_scores에서 동점 검사를 먼저 하는 이유는?',o:['속도가 빨라서','동점이 항상 B로 판정되는 것을 막으려고','EPSILON을 줄이려고','입력 검증을 대신하려고'],a:1,e:'비교(a > b)를 먼저 하면 동점일 때 else 쪽인 B가 선택되어 UNDECIDED가 나올 수 없습니다.'},
+    {q:'size_5_1이 FAIL인 이유는?',o:['판정이 Cross로 틀려서','크기 불일치','Cross·X 점수가 0.9로 같아 UNDECIDED','필터가 없어서'],a:2,e:'X 입력에서 Cross 필터는 중앙 0.9만, X 필터는 대각선 9칸×0.1이 겹쳐 모두 0.9입니다. 동점은 항상 FAIL입니다.'},
+    {q:'evaluate_case 전체를 try/except로 감싼 이유는?',o:['속도 향상','한 케이스의 오류가 프로그램을 중단시키지 않게','로그를 줄이려고','필터를 캐시하려고'],a:1,e:'크기 불일치·스키마 오류도 해당 케이스만 FAIL로 기록하고 다음 케이스를 계속 처리해야 하기 때문입니다.'}
+  ];
+  var qb=$('quizbox');
+  quiz.forEach(function(q,qi){
+    var d=document.createElement('div');d.className='q';
+    d.innerHTML='<h3>Q'+(qi+1)+'. '+q.q+'</h3><div class="opts"></div><p class="exp" hidden></p>';
+    var opts=d.querySelector('.opts'),exp=d.querySelector('.exp');
+    q.o.forEach(function(t,oi){
+      var b=document.createElement('button');b.type='button';b.className='opt';b.textContent=t;
+      b.addEventListener('click',function(){
+        [].forEach.call(opts.children,function(x){x.classList.remove('right','wrong')});
+        b.classList.add(oi===q.a?'right':'wrong');
+        if(oi!==q.a)opts.children[q.a].classList.add('right');
+        exp.hidden=false;exp.textContent=(oi===q.a?'정답입니다. ':'오답입니다. ')+q.e;
+      });
+      opts.appendChild(b);
+    });
+    qb.appendChild(d);
+  });
+})();
+</script>
+</body>
+</html>
